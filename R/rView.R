@@ -30,6 +30,7 @@
 #'
 #' See the vignette for information about setting up port forwarding, and how to use
 #' this function in different client-server environments.
+#' @export
 rView <- function(obj, port = NULL) {
 
   # if indicated, just pass the argument through as the return value

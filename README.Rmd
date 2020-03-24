@@ -45,7 +45,8 @@ for me, I might use, the directory `/home/eanderson/rmote_server`.  Also you nee
 default port number is 4321, but you should choose a different one to make sure you don't collide with another
 user.  Here I will use 4111, but you should use a different number, let us say in the range 4000 to 5000.
     ```{sh, eval=FALSE}
-    rmote::start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4111)
+    library(rmote)
+    start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4111)
     ```
 4. Once you have started the 'rmote' web server from your remote R session, you can then load the 'rView' package with:
     ```{r, eval=FALSE}
@@ -57,7 +58,13 @@ iTerm on a Mac), login to the head node, while enabling port forwarding from you
 example) on the head node to the same port number on your local computer.  That looks like this
     ```{sh, eval=FALSE}
     ssh -L 4111:localhost:4111 eanderson@sedna.nwfsc2.noaa.gov
+    
+    # and once you get that connection, you must start R on the head node and give the command
+    rmote::start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4111)
     ```
+This starts R on the head node, and within that R session a small web server is run that
+serves up data found in the `server_dir` on port 4111.  This is not a compute-intensive job,
+so the sysadmins should not be upset that this is running on the head node.
 6. Also, back on your local machine, open a browser window (like Chrome or Safari) and
 go to the address of the port number on your local machine. In our example, the
 port is 4111 so you must go to: `http://localhost:4111/`.  This
