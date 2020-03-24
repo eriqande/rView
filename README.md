@@ -219,7 +219,7 @@ mode. So it is probably better to just define a function in your
 `.Rpofile` that is easy to type, like:
 
 ``` r
-rmote <- function(server_dir = "~/rmote_server", port = 4111) {
+rmote <- function(server_dir = "~/rmote_server", port = 4949) {
   rmote::start_rmote(server_dir = server_dir, port = port)
 }
 ```
@@ -227,3 +227,21 @@ rmote <- function(server_dir = "~/rmote_server", port = 4111) {
 that includes the server\_dir and the port that you will always want to
 use. Then, when you enter R, you just have to type `rmote()`, but if you
 wanted to change the server\_dir and the port, you still could.
+
+## Clearing junk out of your rmote directory
+
+At some point you might have a lot of old thumbnails and things in the
+directory you are using as your `server_dir`. No problem, just navigate
+inside that directory on the Unix command line on the remote machine and
+do:
+
+``` sh
+rm -r .idx *
+```
+
+Be careful with that command: if you give it in the wrong directory, it
+will delete all your files. The `.idx` is there to explicitly remove the
+hidden file `.idx`, so that rmote will start renumbering files starting
+from 1 again.
+
+This can be done at any time, even if rmote is running.
