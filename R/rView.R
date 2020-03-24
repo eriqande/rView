@@ -29,14 +29,14 @@
 #' to port 4321, you would use \code{rView(port = 4321)}.
 #'
 #' See the vignette for information about setting up port forwarding, and how to use
-#' this function in different client-server environments.
+#' this function in a high-performance computer cluster environment.
 #' @export
 rView <- function(obj, port = NULL) {
 
   # if indicated, just pass the argument through as the return value
-  rpt <- getOption(rview_pass_through)
+  rpt <- getOption("rview_pass_through")
   if (!is.null(rpt) && rpt == TRUE) {
-    pass_though <- TRUE
+    pass_through <- TRUE
   } else {
     pass_through <- FALSE
   }

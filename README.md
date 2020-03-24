@@ -61,11 +61,11 @@ forwarding, but the head node(s) typically can.
     use a port number. The default port number is 4321, but you should
     choose a different one to make sure you don’t collide with another
     user. Here I will use 4111, but you should use a different number,
-    let us say in the range 4000 to
-    5000.
+    let us say in the range 4000 to 5000.
     
     ``` sh
-    rmote::start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4111)
+    library(rmote)
+    start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4111)
     ```
 
 4.  Once you have started the ‘rmote’ web server from your remote R
@@ -83,7 +83,15 @@ forwarding, but the head node(s) typically can.
     
     ``` sh
     ssh -L 4111:localhost:4111 eanderson@sedna.nwfsc2.noaa.gov
+    
+    # and once you get that connection, you must start R on the head node and give the command
+    rmote::start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4111)
     ```
+    
+    This starts R on the head node, and within that R session a small
+    web server is run that serves up data found in the `server_dir` on
+    port 4111. This is not a compute-intensive job, so the sysadmins
+    should not be upset that this is running on the head node.
 
 6.  Also, back on your local machine, open a browser window (like Chrome
     or Safari) and go to the address of the port number on your local
@@ -200,3 +208,22 @@ You can restore the regular behavior of `rView` with:
 ``` r
 options(rview_pass_through = NULL)
 ```
+
+## Making the initialization process quicker
+
+To keep from having to type the `start_rmote` command multiple times,
+you can put that command (with your preferred port) in your `.Rprofile`.
+Then you would always be in `rmote` mode when you start R on your remote
+machine. But then that could screw you up if you are running R in batch
+mode. So it is probably better to just define a function in your
+`.Rpofile` that is easy to type, like:
+
+``` r
+rmote <- function(server_dir = "~/rmote_server", port = 4111) {
+  rmote::start_rmote(server_dir = server_dir, port = port)
+}
+```
+
+that includes the server\_dir and the port that you will always want to
+use. Then, when you enter R, you just have to type `rmote()`, but if you
+wanted to change the server\_dir and the port, you still could.

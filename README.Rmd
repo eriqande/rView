@@ -156,3 +156,21 @@ You can restore the regular behavior of `rView` with:
 ```r
 options(rview_pass_through = NULL)
 ```
+
+
+## Making the initialization process quicker
+
+To keep from having to type the `start_rmote` command multiple times, you can put that command
+(with your preferred port) in your `.Rprofile`.  Then you would always be in `rmote` mode
+when you start R on your remote machine.  But then that could screw you up if you are running
+R in batch mode.  So it is probably better to just define a function in your `.Rpofile`
+that is easy to type, like:
+```r
+rmote <- function(server_dir = "~/rmote_server", port = 4949) {
+  rmote::start_rmote(server_dir = server_dir, port = port)
+}
+```
+that includes the server_dir and the port that you will always want to use.  Then, 
+when you enter R, you just have to type `rmote()`, but if you wanted to
+change the server_dir and the port, you still could.
+
