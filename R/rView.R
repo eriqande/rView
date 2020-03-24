@@ -102,7 +102,7 @@ rView <- function(obj, port = NULL) {
     }
     show_name <- paste0("r:", obj_name)
     obj_down <- readRDS(file)
-    View(obj_down, title = show_name)
+    myView(obj_down, title = show_name)
   }
 }
 
