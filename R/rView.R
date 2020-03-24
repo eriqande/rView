@@ -32,6 +32,18 @@
 #' this function in different client-server environments.
 rView <- function(obj, port = NULL) {
 
+  # if indicated, just pass the argument through as the return value
+  rpt <- getOption(rview_pass_through)
+  if (!is.null(rpt) && rpt == TRUE) {
+    pass_though <- TRUE
+  } else {
+    pass_through <- FALSE
+  }
+  if (pass_through == TRUE) {
+    return(obj)
+  }
+
+
   # if port is not null, then it simply writes that to the options(rview_port = XXXX)
   # and then exits
   if (!is.null(port)) {

@@ -1,50 +1,132 @@
 rView
 ================
 
-This is a package with a single function that hijacks the server used by
-the rmote package to send data objects over the network to be viewed
+This is a package with a single function that uses the server used by
+the ‘rmote’ package to send data objects over the network to be viewed
 using the RStudio viewer in a local session.
 
-Here is what a session looks like on the Sedna compute cluster. Some of
-this is a total workaround right now because the compute nodes can’t to
-port forwarding, but the head node can.
+## Setting up / Installing packages
 
-1.  From RStudio terminal, login to sedna
+In order to use this package you must first install two packages,
+`servr` and `rmote`, into your *remote* R library (i.e., the one on the
+compute cluster). `servr` is on CRAN and can be installed with: be
+installed with:
 
-2.  Get a compute node (`srun --pty /bin/bash`)
+``` r
+install.packages("servr")
+```
 
-3.  On that compute node, start R and then `library(rmote)`
+`rmote` is not on CRAN (and may not ever be), so you must install it
+with:
 
-4.  Start the rmote server, but make sure that it is writing to a
-    directory in my home
-    directory:
+``` r
+remotes::install_github("cloudyr/rmote")
+```
+
+There might be a few dependencies that are not automatically installed,
+and so it might take several round of installation to finally get those
+two packages installed. Once they are installed, however, you can then
+install this ‘rView’ package on both your local and remote computers, by
+doing this on both of them:
+
+``` r
+remotes::install_github("eriqande/rView")
+```
+
+## Initiating rmote and rView on a remote computer cluster
+
+Here is what a session looks like on a compute cluster. Some of this is
+a workaround because the compute nodes may not be free to do port
+forwarding, but the head node(s) typically can.
+
+1.  *From RStudio terminal*, login to the head node on the cluster
+    
+    1.  If you would like, establish or attach to a tmux or screen
+        session. If you don’t know that that means, then
+
+2.  *From RStudio terminal* get a shell on compute node (`srun --pty
+    /bin/bash` of `sinteractive`, etc., depending on your cluster), and
+    \_start an R session by typing `R` at the command line of the
+    compute node.
+
+3.  In the R session on the remote machine, start the ‘rmote’ server,
+    but make sure that it is writing to a directory in your home
+    directory. (This is necessary so we can relay the contents of that
+    directory from a port on the head node. The defaut ‘rmote’ directory
+    location in `/tmp` is accessible only by the compute node, not the
+    head node.) This directory can be on any storage that is shared by
+    the different nodes in the cluster. (So, for example, you could put
+    it in your `scratch` area, if desired. For example, for me, I might
+    use, the directory `/home/eanderson/rmote_server`. Also you need to
+    use a port number. The default port number is 4321, but you should
+    choose a different one to make sure you don’t collide with another
+    user. Here I will use 4111, but you should use a different number,
+    let us say in the range 4000 to
+    5000.
     
     ``` sh
-    rmote::start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4321)
+    rmote::start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4111)
     ```
 
-5.  In a separate terminal, login to the head node with:
-    
-    ``` sh
-    ssh -L 4321:localhost:4321 eanderson@sedna.nwfsc2.noaa.gov
-    ```
-    
-    And then start an R session there and give it this:
+4.  Once you have started the ‘rmote’ web server from your remote R
+    session, you can then load the ‘rView’ package with:
     
     ``` r
-    library(rmote)
-    rmote::start_rmote(server_dir = "/home/eanderson/rmote_server", port = 4321)
+    library(rView)
     ```
-    
-    I know we should run compute jobs on the head node, but this is
-    merely serving up the directory on a forwarded port. Not compute
-    intensive. Note that when we write things from the compute node to
-    `/home/eanderson/rmote_server` they get served up by the head node.
-    That seems OK. (and that is the workaround part for the fact that
-    the compute nodes can’t forward ports.)
 
-Then, when that is all set up, we can send objects to our local RStudio
-like this:
+5.  Now, back on your local machine, in a separate terminal (it does not
+    need to be in RStudio…you could use the Terminal app, or iTerm on a
+    Mac), login to the head node, while enabling port forwarding from
+    your port number (4111 in the example) on the head node to the same
+    port number on your local computer. That looks like this
+    
+    ``` sh
+    ssh -L 4111:localhost:4111 eanderson@sedna.nwfsc2.noaa.gov
+    ```
+
+6.  Also, back on your local machine, open a browser window (like Chrome
+    or Safari) and go to the address of the port number on your local
+    machine. In our example, the port is 4111 so you must go to:
+    `http://localhost:4111/`. This is where `rmote` will serve up plots
+    and help screens.
+
+## Using rmote
+
+This is very straightforward. The ‘rmote’ package, when invoked on the
+remote machine, overwrites the standard `print` function for base plots,
+ggplots, and the help function. So, if you print a ggplot2 object,
+rather than trying to print on the remote machine and finding nowhere to
+print it, when you are running ‘rmote’, the object will be printed to
+the `server_dir` location and served to your local web browser via ssh
+port forwarding. You can try it like this:
+
+First, do:
+
+``` r
+?rmote::start_rmote
+```
+
+on the remote machine; then check you web browser that is pointed to
+`http://localhost:4111/`.
+
+Second, you might try printing a ggplot object in the R session on the
+remote machine:
+
+``` r
+library(tidyverse)
+tibble(x = 1:10, y = (1:10)^2) %>%
+  ggplot(aes(x = x, y = y)) + 
+  geom_point(colour = "blue", size = 2) + 
+  geom_line()
+```
+
+That will cause the plot to be printed to the web page on the browser.
+
+## Using rView
+
+When all is set up as above, we can send objects to our local RStudio
+data viewer like this:
 
   - First way, by object name:
 
@@ -73,4 +155,48 @@ diamonds %>%
 rView(.)
 
 # or by piping anything into rView()...
+```
+
+### The `rview_pass_through` option
+
+There might be times when you would like to add `rView()` commands to
+the actual R code blocks in an RMarkdown document. For example, if you
+are working on an RMarkdown document, then you might have an R code
+black that creates a new data object (a tibble maybe) called
+`my_result`. To print that to the RMarkdown document, you might end the
+code block with a line that says:
+
+``` r
+my_result
+```
+
+Doing so would cause the `my_result` tibble to be printed in the
+RMarkdown document.
+
+If, instead, you wrote in that code block:
+
+``` r
+rView(my_result)
+```
+
+then, it would be quite easy, when working through the code blocks on a
+remote machine (and the local machine) to send that code to the remote
+and the local R interpreters in order to view the remote data object on
+the local RStudio data object browser. However, what if you actually
+just want to knit the RMarkdown document? That is where the
+`rview_pass_through` option comes into play.
+
+If you set that option to TRUE, with:
+
+``` r
+options(rview_pass_through = TRUE)
+```
+
+Then the `rView` commands will be ignored, and effectively it will just
+default-print the object in the console/RMarkdown document.
+
+You can restore the regular behavior of `rView` with:
+
+``` r
+options(rview_pass_through = NULL)
 ```
